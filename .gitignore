@@ -1,4 +1,3 @@
-# Logs
 *.pem
 logs
 *.log
@@ -68,5 +67,3 @@ typings/
 #bundle.js.map
 .envrc
 
-bundle.js
-bundle.js.map
