@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 
-import {VRButton} from 'three/examples/jsm/webxr/VRButton.js';
-import {loadAssets} from './lib/assetManager.js';
+import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
+import { loadAssets } from './lib/assetManager.js';
 
 // ECSY
 import { World } from 'ecsy';
@@ -30,10 +30,12 @@ import * as roomPhotogrammetryObject from './rooms/PhotogrammetryObject.js';
 import * as roomVertigo from './rooms/Vertigo.js';
 import * as roomSound from './rooms/Sound.js';
 
-import {shaders} from './lib/shaders.js';
+import { shaders } from './lib/shaders.js';
 
 import WebXRPolyfill from 'webxr-polyfill';
 const polyfill = new WebXRPolyfill();
+
+import { init as audioInit } from './audio.js'
 
 var clock = new THREE.Clock();
 
@@ -85,7 +87,7 @@ const urlObject = new URL(window.location);
 const roomName = urlObject.searchParams.get('room');
 context.room = roomNames.indexOf(roomName) !== -1 ? roomNames.indexOf(roomName) : 0;
 // console.log(`Current room "${roomNames[context.room]}", ${context.room}`);
-const debug = urlObject.searchParams.has('debug');
+const debug = true //urlObject.searchParams.has('debug');
 const handedness = urlObject.searchParams.has('handedness') ? urlObject.searchParams.get('handedness') : "right";
 
 // Target positions when moving from one room to another
@@ -146,11 +148,13 @@ function playMusic(room) {
 var ecsyWorld;
 var systemsGroup = {};
 
+var players = {};
+
 function detectWebXR() {
   if ('xr' in navigator) {
-    navigator.xr.isSessionSupported('immersive-vr').then( supported => {
+    navigator.xr.isSessionSupported('immersive-vr').then(supported => {
       if (!supported) document.getElementById('no-webxr').classList.remove('hidden');
-    } );
+    });
 
   } else {
     document.getElementById('no-webxr').classList.remove('hidden');
@@ -178,10 +182,10 @@ export function init() {
     AreaCheckerSystem, ControllersSystem, DebugHelperSystem
   ]);
 
-  renderer = new THREE.WebGLRenderer({antialias: true, logarithmicDepthBuffer: false});
+  renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: false });
   renderer.gammaFactor = 2.2;
   renderer.outputEncoding = THREE.sRGBEncoding;
-  renderer.setPixelRatio( window.devicePixelRatio );
+  renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.xr.enabled = true;
 
@@ -193,15 +197,48 @@ export function init() {
 
   ambientMusic = new THREE.Audio(listener);
 
+  function onPlayerLocationUpdate({ player, position }) {
+    var cube = players[player];
+
+    if (!cube) {
+      var geometry = new THREE.SphereGeometry();
+      var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+      var cube = new THREE.Mesh(geometry, material);
+      scene.add(cube);
+      players[player] = cube;
+    }
+
+    cube.position.set(position.x, position.y, position.z);
+  }
+
+  var onUpdateLocation = audioInit(onPlayerLocationUpdate);
   controls = new PointerLockControls(camera, renderer.domElement);
+
   document.body.addEventListener('click', () => controls.lock());
   if (debug) {
+    var updateLocation = () => {
+      var position = camera.position.clone()
+      onUpdateLocation(position.x, position.y, position.z);
+    }
+
     document.body.addEventListener('keydown', ev => {
-      switch(ev.keyCode) {
-        case 87: controls.moveForward(0.2); break;
-        case 65: controls.moveRight(-0.2); break;
-        case 83: controls.moveForward(-0.2); break;
-        case 68: controls.moveRight(0.2); break;
+      switch (ev.keyCode) {
+        case 87:
+          controls.moveForward(0.2);
+          updateLocation();
+          break;
+        case 65:
+          controls.moveRight(-0.2);
+          updateLocation();
+          break;
+        case 83:
+          controls.moveForward(-0.2);
+          updateLocation();
+          break;
+        case 68:
+          controls.moveRight(0.2);
+          updateLocation();
+          break;
         case 78: gotoRoom((context.room + 1) % rooms.length); break;
         default: {
           var room = ev.keyCode - 48;
@@ -285,12 +322,11 @@ export function init() {
     document.getElementById('loading').style.display = 'none';
   },
 
-  loadProgress => {
-    document.querySelector('#progressbar').setAttribute('stroke-dashoffset',
-      - (282 - Math.floor(loadProgress / loadTotal * 282)));
-  },
-  debug);
-
+    loadProgress => {
+      document.querySelector('#progressbar').setAttribute('stroke-dashoffset',
+        - (282 - Math.floor(loadProgress / loadTotal * 282)));
+    },
+    debug);
 }
 
 function setupControllers() {
@@ -301,15 +337,15 @@ function setupControllers() {
   model.getObjectByName('body').material = material;
   model.getObjectByName('trigger').material = material;
 
-  for (let i = 0;i < 2; i++) {
+  for (let i = 0; i < 2; i++) {
     let controller = controllers[i];
     controller.boundingBox = new THREE.Box3();
     controller.userData.grabbing = null;
-    controller.addEventListener( 'connected', function ( event ) {
+    controller.addEventListener('connected', function (event) {
       this.add(model.clone());
       raycontrol.addController(this, event.data);
-    } );
-    controller.addEventListener( 'disconnect', function () {
+    });
+    controller.addEventListener('disconnect', function () {
       this.remove(this.children[0]);
       raycontrol.removeController(this, event.data);
     });
@@ -388,4 +424,4 @@ function animate() {
   }
 }
 
-window.onload = () => {init()};
+window.onload = () => { init() };

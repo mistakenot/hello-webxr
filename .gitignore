@@ -66,3 +66,4 @@ typings/
 
 #bundle.js
 #bundle.js.map
+.envrc

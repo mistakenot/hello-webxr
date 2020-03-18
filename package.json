@@ -4,10 +4,11 @@
   "description": "A showcase of different WebXR experiences and interaction examples",
   "private": true,
   "scripts": {
-    "start": "webpack-dev-server -d --https --host 0.0.0.0",
+    "start": "webpack-dev-server -d --host 0.0.0.0",
     "build": "webpack -p",
     "watch": "webpack --watch",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "server": "PORT=8082 node ./signaling-server.js"
   },
   "repository": {
     "type": "git",
@@ -30,7 +31,10 @@
   },
   "homepage": "https://github.com/MozillaReality/hello-webxr#readme",
   "dependencies": {
+    "cors": "^2.8.5",
     "ecsy": "github:mozillareality/ecsy#master",
+    "express": "^4.17.1",
+    "socket.io": "^2.3.0",
     "three": "^0.112.0",
     "three-obj-loader": "^1.1.3",
     "three-pointerlock": "0.0.2",

@@ -17,5 +17,23 @@ module.exports = {
   },
   watchOptions: {
     ignored: [/node_modules/],
+  },
+  devServer: {
+    proxy: {
+      '/rtc': {
+        target: {
+          host: "0.0.0.0",
+          protocol: 'http:',
+          port: 8082,
+          ws: true
+        },
+        pathRewrite: {
+          '^/rtc': ''
+        }
+      }
+    },
+    headers: {
+      "Access-Control-Allow-Origin": "*"
+    }
   }
 };
