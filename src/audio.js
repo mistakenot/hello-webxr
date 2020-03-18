@@ -19,8 +19,8 @@ var attachMediaStream;
 
 export function init(onUpdatePlayerLocation) {
     console.log("Connecting to signaling server");
-    signaling_socket = io(SIGNALING_SERVER);
-    // signaling_socket = io();
+    // signaling_socket = io(SIGNALING_SERVER);
+    signaling_socket = io();
 
     signaling_socket.on('connect_error', e => console.error(e))
 
